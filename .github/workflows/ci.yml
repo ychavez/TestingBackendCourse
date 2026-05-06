@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore TestingBackendCourse.sln
+
+      - name: Build
+        run: dotnet build TestingBackendCourse.sln --configuration Release --no-restore
+
+      - name: Test with coverage
+        run: dotnet test TestingBackendCourse.sln --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory TestResults
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: TestResults/**/*.xml

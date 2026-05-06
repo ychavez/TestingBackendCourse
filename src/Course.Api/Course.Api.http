@@ -1,0 +1,26 @@
+@Course.Api_HostAddress = http://localhost:5151
+@CustomerId = aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
+@MouseId = 22222222-2222-2222-2222-222222222222
+
+GET {{Course.Api_HostAddress}}/health
+Accept: application/json
+
+###
+
+GET {{Course.Api_HostAddress}}/api/products
+Accept: application/json
+
+###
+
+POST {{Course.Api_HostAddress}}/api/orders
+Content-Type: application/json
+
+{
+  "customerId": "{{CustomerId}}",
+  "items": [
+    {
+      "productId": "{{MouseId}}",
+      "quantity": 2
+    }
+  ]
+}
