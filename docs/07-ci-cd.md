@@ -5,7 +5,7 @@ El workflow esta en `.github/workflows/ci.yml`.
 Pipeline incluido:
 
 - Checkout del repositorio.
-- Instalacion de .NET 8.
+- Instalacion de .NET 10.
 - Restore.
 - Build en Release.
 - Test con cobertura usando Coverlet.

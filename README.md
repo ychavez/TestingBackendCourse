@@ -4,7 +4,7 @@ Proyecto didactico para ensenar pruebas profesionales en un backend ASP.NET Core
 
 ## Stack
 
-- .NET 8
+- .NET 10 para API, capas productivas y proyectos de prueba
 - ASP.NET Core Web API con controllers
 - xUnit
 - Moq
@@ -59,6 +59,8 @@ La API expone:
 - `POST /api/orders/{id}/cancel`
 
 ## Ejecutar pruebas
+
+Los proyectos bajo `tests/` compilan contra `net10.0`.
 
 ```bash
 dotnet test
