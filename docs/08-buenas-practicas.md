@@ -16,5 +16,7 @@ Checklist para escribir mejores pruebas:
 - Un motivo de fallo por prueba.
 - Evitar sleeps, aleatoriedad innecesaria y dependencias externas.
 - Preferir builders o fixtures cuando los datos crezcan.
+- Usar `data-testid` estables en pruebas de UI para no acoplarlas al texto visual.
+- No duplicar en Playwright todo lo que ya esta cubierto por unitarias o integracion.
 
 La meta del curso es que el equipo aprenda a decidir que probar, en que nivel y con que costo de mantenimiento.

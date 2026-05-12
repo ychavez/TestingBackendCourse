@@ -1,0 +1,344 @@
+@page "/"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using System.Globalization
+@inject CourseApiClient Api
+
+<PageTitle>Course.Web</PageTitle>
+
+<section class="workspace">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Frontend local</p>
+            <h1>Pedidos eCommerce</h1>
+        </div>
+        <span data-testid="connection-status" class="@ConnectionStatusClass">@ConnectionStatusText</span>
+        <span data-testid="interactive-status" class="visually-hidden">@(_isInteractive ? "Interactive" : "Prerender")</span>
+    </div>
+
+    <div class="grid">
+        <section class="panel catalog-panel">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Catalogo</p>
+                    <h2>Productos</h2>
+                </div>
+                <button type="button" class="ghost-button" @onclick="LoadProductsAsync" disabled="@_isBusy">Actualizar</button>
+            </div>
+
+            @if (_isLoadingProducts)
+            {
+                <p class="empty-state">Cargando productos...</p>
+            }
+            else if (!string.IsNullOrWhiteSpace(_loadError))
+            {
+                <div class="alert error" data-testid="message-error">@_loadError</div>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table data-testid="products-table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Precio</th>
+                                <th>Stock</th>
+                                <th>Cantidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var product in _products)
+                            {
+                                var quantity = GetQuantity(product.Id);
+                                <tr>
+                                    <td>
+                                        <strong>@product.Name</strong>
+                                        <small>@product.Id</small>
+                                    </td>
+                                    <td>@Money(product.Price)</td>
+                                    <td>@product.Stock</td>
+                                    <td>
+                                        <input
+                                            data-testid="@QuantityTestId(product)"
+                                            class="quantity-input"
+                                            type="number"
+                                            min="0"
+                                            max="99"
+                                            value="@quantity"
+                                            @oninput="args => SetQuantity(product.Id, args)" />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="order-bar">
+                    <div>
+                        <span>Total estimado</span>
+                        <strong>@Money(EstimatedTotal)</strong>
+                    </div>
+                    <button data-testid="create-order" type="button" @onclick="CreateOrderAsync" disabled="@(!CanCreateOrder || _isBusy)">
+                        Crear pedido
+                    </button>
+                </div>
+            }
+        </section>
+
+        <aside class="panel order-panel">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Resultado</p>
+                    <h2>Pedido actual</h2>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_message))
+            {
+                <div class="@MessageClass" data-testid="@MessageTestId">@_message</div>
+            }
+
+            <dl class="order-summary">
+                <div>
+                    <dt>Order id</dt>
+                    <dd data-testid="order-id">@(_currentOrder?.Id.ToString() ?? "-")</dd>
+                </div>
+                <div>
+                    <dt>Estado</dt>
+                    <dd data-testid="order-status">@(_currentOrder?.Status.ToString() ?? "-")</dd>
+                </div>
+                <div>
+                    <dt>Total</dt>
+                    <dd data-testid="order-total">@(CurrentTotal)</dd>
+                </div>
+                <div>
+                    <dt>Pago</dt>
+                    <dd data-testid="payment-status">@(_currentOrder?.Payment?.Status.ToString() ?? "-")</dd>
+                </div>
+            </dl>
+
+            @if (_currentOrder?.Items.Count > 0)
+            {
+                <div class="line-items">
+                    @foreach (var item in _currentOrder.Items)
+                    {
+                        <div>
+                            <strong>@item.ProductName</strong>
+                            <span>@item.Quantity x @Money(item.UnitPrice)</span>
+                        </div>
+                    }
+                </div>
+            }
+
+            <div class="lookup-form">
+                <label for="lookup-order-id">Consultar pedido</label>
+                <div>
+                    <input id="lookup-order-id" data-testid="lookup-order-id" @bind="_lookupOrderId" placeholder="order id" />
+                    <button data-testid="lookup-order" type="button" @onclick="LookupOrderAsync" disabled="@_isBusy">Consultar</button>
+                </div>
+            </div>
+
+            <button data-testid="cancel-order" class="danger-button" type="button" @onclick="CancelOrderAsync" disabled="@(!CanCancelCurrentOrder || _isBusy)">
+                Cancelar pedido
+            </button>
+        </aside>
+    </div>
+</section>
+
+@code {
+    private static readonly Guid DemoCustomerId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
+    private readonly Dictionary<Guid, int> _quantities = [];
+    private IReadOnlyList<ProductResponse> _products = [];
+    private OrderResponse? _currentOrder;
+    private string? _loadError;
+    private string? _message;
+    private bool _messageIsError;
+    private bool _isInteractive;
+    private bool _isBusy;
+    private bool _isLoadingProducts = true;
+    private string _lookupOrderId = string.Empty;
+
+    private string ConnectionStatusText => _isLoadingProducts ? "Conectando" : string.IsNullOrWhiteSpace(_loadError) ? "Conectado" : "API no disponible";
+
+    private string ConnectionStatusClass => string.IsNullOrWhiteSpace(_loadError) ? "status-pill ok" : "status-pill error";
+
+    private decimal EstimatedTotal => _products.Sum(product => product.Price * GetQuantity(product.Id));
+
+    private bool CanCreateOrder => _products.Any(product => GetQuantity(product.Id) > 0);
+
+    private bool CanCancelCurrentOrder => _currentOrder?.Status is OrderStatus.Created or OrderStatus.PaymentRejected;
+
+    private string MessageClass => _messageIsError ? "alert error" : "alert success";
+
+    private string MessageTestId => _messageIsError ? "message-error" : "message-success";
+
+    private string CurrentTotal => _currentOrder is null ? "-" : Money(_currentOrder.Total);
+
+    protected override Task OnInitializedAsync()
+    {
+        return LoadProductsAsync();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _isInteractive = true;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadProductsAsync()
+    {
+        _isLoadingProducts = true;
+        var result = await Api.GetProductsAsync();
+
+        if (result.Success && result.Value is not null)
+        {
+            _products = result.Value;
+            _loadError = null;
+
+            foreach (var product in _products)
+            {
+                _quantities.TryAdd(product.Id, 0);
+            }
+        }
+        else
+        {
+            _loadError = result.ErrorMessage ?? "No se pudo cargar el catalogo.";
+        }
+
+        _isLoadingProducts = false;
+    }
+
+    private async Task CreateOrderAsync()
+    {
+        var items = _products
+            .Select(product => new CreateOrderItemRequest(product.Id, GetQuantity(product.Id)))
+            .Where(item => item.Quantity > 0)
+            .ToArray();
+
+        if (items.Length == 0)
+        {
+            ShowError("Selecciona al menos un producto.");
+            return;
+        }
+
+        _isBusy = true;
+        var result = await Api.CreateOrderAsync(new CreateOrderRequest(DemoCustomerId, items));
+
+        if (result.Success && result.Value is not null)
+        {
+            _currentOrder = result.Value;
+            _lookupOrderId = result.Value.Id.ToString();
+            ResetQuantities();
+            ShowSuccess("Pedido creado correctamente.");
+            await LoadProductsAsync();
+        }
+        else
+        {
+            ShowError(result.ErrorMessage ?? "No se pudo crear el pedido.");
+        }
+
+        _isBusy = false;
+    }
+
+    private async Task LookupOrderAsync()
+    {
+        if (!Guid.TryParse(_lookupOrderId, out var orderId))
+        {
+            ShowError("El order id no es valido.");
+            return;
+        }
+
+        _isBusy = true;
+        var result = await Api.GetOrderAsync(orderId);
+
+        if (result.Success && result.Value is not null)
+        {
+            _currentOrder = result.Value;
+            ShowSuccess("Pedido consultado correctamente.");
+        }
+        else
+        {
+            ShowError(result.ErrorMessage ?? "Pedido no encontrado.");
+        }
+
+        _isBusy = false;
+    }
+
+    private async Task CancelOrderAsync()
+    {
+        if (_currentOrder is null)
+        {
+            ShowError("No hay un pedido para cancelar.");
+            return;
+        }
+
+        _isBusy = true;
+        var result = await Api.CancelOrderAsync(_currentOrder.Id);
+
+        if (result.Success && result.Value is not null)
+        {
+            _currentOrder = result.Value;
+            ShowSuccess("Pedido cancelado correctamente.");
+            await LoadProductsAsync();
+        }
+        else
+        {
+            ShowError(result.ErrorMessage ?? "No se pudo cancelar el pedido.");
+        }
+
+        _isBusy = false;
+    }
+
+    private int GetQuantity(Guid productId)
+    {
+        return _quantities.GetValueOrDefault(productId);
+    }
+
+    private void SetQuantity(Guid productId, ChangeEventArgs args)
+    {
+        var rawValue = args.Value?.ToString();
+        _quantities[productId] = int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var quantity)
+            ? Math.Clamp(quantity, 0, 99)
+            : 0;
+    }
+
+    private void ResetQuantities()
+    {
+        foreach (var productId in _quantities.Keys.ToArray())
+        {
+            _quantities[productId] = 0;
+        }
+    }
+
+    private void ShowSuccess(string message)
+    {
+        _message = message;
+        _messageIsError = false;
+    }
+
+    private void ShowError(string message)
+    {
+        _message = message;
+        _messageIsError = true;
+    }
+
+    private static string QuantityTestId(ProductResponse product)
+    {
+        return $"quantity-{Slug(product.Name)}";
+    }
+
+    private static string Slug(string value)
+    {
+        return value.Trim().ToLowerInvariant().Replace(" ", "-");
+    }
+
+    private static string Money(decimal value)
+    {
+        return "$" + value.ToString("0.00", CultureInfo.InvariantCulture);
+    }
+}

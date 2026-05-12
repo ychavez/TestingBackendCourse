@@ -470,12 +470,12 @@
       <article class="slide active">
         <p class="kicker">Curso backend profesional</p>
         <h1>Testing Profesional para Backend en .NET</h1>
-        <p class="lead">Una guia practica para probar reglas de negocio, servicios, API, CI/CD, cobertura y performance en un eCommerce didactico.</p>
+        <p class="lead">Una guia practica para probar reglas de negocio, servicios, API, frontend Blazor, CI/CD, cobertura y performance en un eCommerce didactico.</p>
         <div class="metrics">
           <div class="metric"><strong>.NET 10</strong><span>API y capas productivas</span></div>
-          <div class="metric"><strong>.NET 10</strong><span>Proyectos de prueba</span></div>
-          <div class="metric"><strong>13 tests</strong><span>Suite didactica base</span></div>
-          <div class="metric"><strong>1 NBomber</strong><span>Escenario manual de carga</span></div>
+          <div class="metric"><strong>Blazor</strong><span>Frontend local didactico</span></div>
+          <div class="metric"><strong>Playwright</strong><span>4 pruebas de navegador</span></div>
+          <div class="metric"><strong>CI gate</strong><span>Coverage y browser tests</span></div>
         </div>
         <div class="footer-note"><span>TestingBackendCourse</span><span>Usa flechas, espacio o botones para navegar</span></div>
       </article>
@@ -486,7 +486,7 @@
         <div class="grid-3">
           <div class="tile accent-teal"><strong>Didactico</strong><span>El codigo muestra decisiones faciles de explicar en clase.</span></div>
           <div class="tile accent-green"><strong>Realista</strong><span>API eCommerce con pedidos, stock, pagos y endpoints HTTP.</span></div>
-          <div class="tile accent-gold"><strong>Profesional</strong><span>Incluye CI/CD, cobertura, mocks, integracion y performance.</span></div>
+          <div class="tile accent-gold"><strong>Profesional</strong><span>Incluye CI/CD, cobertura, mocks, integracion, Playwright y performance.</span></div>
         </div>
         <p class="callout">El curso ensena a decidir que probar, en que nivel y con que costo de mantenimiento.</p>
       </article>
@@ -500,6 +500,8 @@
           <div class="tile accent-green"><strong>Moq</strong><span>Dobles para colaboradores externos.</span></div>
           <div class="tile accent-gold"><strong>FluentAssertions</strong><span>Asserts legibles y expresivos.</span></div>
           <div class="tile accent-violet"><strong>WebApplicationFactory</strong><span>API en memoria sin abrir puertos.</span></div>
+          <div class="tile accent-green"><strong>Blazor Server</strong><span>Frontend .NET 10 conectado a la API local.</span></div>
+          <div class="tile accent-blue"><strong>Playwright</strong><span>Pruebas de navegador sobre flujos reales.</span></div>
           <div class="tile accent-red"><strong>NBomber</strong><span>Carga, latencia y tasa de errores.</span></div>
           <div class="tile accent-teal"><strong>Coverlet</strong><span>Cobertura en formato Cobertura.</span></div>
           <div class="tile accent-blue"><strong>GitHub Actions</strong><span>Restore, build, test y artifacts.</span></div>
@@ -515,7 +517,7 @@
           <div class="layer"><h3>Infrastructure</h3><small>Repositorios in-memory y gateway de pago simulado.</small></div>
           <div class="layer"><h3>API</h3><small>Controllers, DI, health checks y traduccion HTTP.</small></div>
         </div>
-        <p class="callout">La regla importante: el negocio se prueba cerca de Domain, y HTTP se prueba con WebApplicationFactory.</p>
+        <p class="callout">La regla importante: el negocio se prueba cerca de Domain, HTTP se prueba con WebApplicationFactory y Course.Web valida el flujo visible con Playwright.</p>
       </article>
 
       <article class="slide">
@@ -545,7 +547,7 @@
         <p class="kicker">Estrategia</p>
         <h2>Piramide de pruebas aplicada al curso</h2>
         <div class="pyramid">
-          <div class="top">Pocas E2E y performance</div>
+          <div class="top">Pocas E2E, browser y performance</div>
           <div class="mid">Algunas integracion y smoke</div>
           <div class="base">Muchas unitarias y de servicio</div>
         </div>
@@ -612,6 +614,38 @@ Order.Cancel()            => bloquea pedidos pagados</div>
       </article>
 
       <article class="slide">
+        <p class="kicker">Course.Web</p>
+        <h2>Blazor Server conecta el curso con una UI real</h2>
+        <div class="grid-2">
+          <ul class="big-list">
+            <li>`CourseApi:BaseUrl` apunta a `http://localhost:5151`.</li>
+            <li>La UI lista productos, crea pedidos y consulta estados.</li>
+            <li>No necesita CORS porque llama a la API desde servidor.</li>
+          </ul>
+          <div class="code">src/Course.Web
+  Clients/CourseApiClient.cs
+  Components/Pages/Home.razor
+
+GET  /api/products
+POST /api/orders
+POST /api/orders/{id}/cancel</div>
+        </div>
+      </article>
+
+      <article class="slide">
+        <p class="kicker">08 Frontend Tests</p>
+        <h2>Playwright prueba el flujo desde el navegador</h2>
+        <div class="grid-3">
+          <div class="tile accent-teal"><strong>Arranque</strong><span>Fixture levanta API y Web en puertos libres.</span></div>
+          <div class="tile accent-blue"><strong>Estabilidad</strong><span>`data-testid` evita acoplar tests a CSS o layout.</span></div>
+          <div class="tile accent-green"><strong>CI</strong><span>Chromium se instala antes de ejecutar la suite.</span></div>
+        </div>
+        <div class="code">pwsh tests/08-FrontendTests/Course.PlaywrightTests/bin/Release/net10.0/playwright.ps1 install chromium
+
+dotnet test tests/08-FrontendTests/Course.PlaywrightTests/Course.PlaywrightTests.csproj</div>
+      </article>
+
+      <article class="slide">
         <p class="kicker">06 Performance</p>
         <h2>NBomber: medir una hipotesis de carga</h2>
         <div class="grid-2">
@@ -639,7 +673,7 @@ dotnet tool install --global dotnet-reportgenerator-globaltool
 reportgenerator -reports:"**/coverage.cobertura.xml" -targetdir:"coverage-report" -reporttypes:Html</div>
         <div class="grid-2">
           <div class="tile accent-green"><strong>Priorizar</strong><span>Reglas de negocio y flujos criticos.</span></div>
-          <div class="tile accent-gold"><strong>Revisar</strong><span>Ramas no cubiertas, no solo lineas.</span></div>
+          <div class="tile accent-gold"><strong>Gate unitario</strong><span>CI falla si UnitTests baja de 80% de lineas.</span></div>
         </div>
       </article>
 
@@ -647,13 +681,13 @@ reportgenerator -reports:"**/coverage.cobertura.xml" -targetdir:"coverage-report
         <p class="kicker">08 CI/CD</p>
         <h2>GitHub Actions ejecuta la suite como contrato</h2>
         <div class="flow">
-          <div><strong>Checkout</strong><span>Trae el repositorio</span></div>
-          <div><strong>Setup .NET</strong><span>SDK 10</span></div>
-          <div><strong>Restore</strong><span>Dependencias</span></div>
-          <div><strong>Build</strong><span>Release</span></div>
-          <div><strong>Test</strong><span>Cobertura como artifact</span></div>
+          <div><strong>Build</strong><span>Restore y compilacion Release</span></div>
+          <div><strong>Coverage gate</strong><span>Unit tests minimo 80%</span></div>
+          <div><strong>Backend tests</strong><span>XPlat Code Coverage</span></div>
+          <div><strong>Chromium</strong><span>Playwright install</span></div>
+          <div><strong>Browser tests</strong><span>Course.Web + Course.Api</span></div>
         </div>
-        <p class="lead">La regla operativa: el pipeline debe ser rapido, confiable y fallar ante regresiones.</p>
+        <p class="lead">En push a `main`, el pipeline falla si baja la cobertura unitaria o si se rompe el flujo visible en navegador.</p>
       </article>
 
       <article class="slide">
@@ -668,7 +702,7 @@ reportgenerator -reports:"**/coverage.cobertura.xml" -targetdir:"coverage-report
           <ul class="big-list">
             <li>Un motivo de fallo por prueba.</li>
             <li>Evitar sleeps y aleatoriedad innecesaria.</li>
-            <li>Usar builders o fixtures cuando los datos crezcan.</li>
+            <li>Usar fixtures y `data-testid` estables cuando los flujos crezcan.</li>
           </ul>
         </div>
       </article>
@@ -681,7 +715,8 @@ reportgenerator -reports:"**/coverage.cobertura.xml" -targetdir:"coverage-report
   Course.Domain
   Course.Application
   Course.Infrastructure
-  Course.Api</div>
+  Course.Api
+  Course.Web</div>
           <div class="code">tests/
   01-UnitTests
   02-Mocking
@@ -689,7 +724,8 @@ reportgenerator -reports:"**/coverage.cobertura.xml" -targetdir:"coverage-report
   04-SmokeTests
   05-EndToEndTests
   06-PerformanceTests
-  07-Coverage</div>
+  07-Coverage
+  08-FrontendTests</div>
         </div>
       </article>
 
@@ -713,7 +749,7 @@ reportgenerator -reports:"**/coverage.cobertura.xml" -targetdir:"coverage-report
       </div>
       <div class="progress" aria-hidden="true"><span id="progress"></span></div>
       <div>
-        <span id="counter">1 / 17</span>
+        <span id="counter">1 / 18</span>
         <button id="fullscreen" type="button" aria-label="Pantalla completa">Full</button>
       </div>
     </nav>

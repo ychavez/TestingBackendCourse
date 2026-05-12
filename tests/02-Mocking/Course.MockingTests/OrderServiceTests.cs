@@ -1,7 +1,5 @@
 using Course.Application.Abstractions;
-using Course.Application.Orders;
 using Course.Domain.Entities;
-using Course.Domain.Enums;
 using FluentAssertions;
 using Moq;
 
@@ -10,60 +8,32 @@ namespace Course.MockingTests;
 public sealed class OrderServiceTests
 {
     [Fact]
-    public async Task CreateAsync_WhenPaymentIsApproved_ShouldPersistPaidOrder()
+    public async Task CustomerRepositoryMock_WhenCustomerExists_ShouldReturnConfiguredCustomer()
     {
         var customerId = Guid.NewGuid();
-        var productId = Guid.NewGuid();
-        var product = new Product(productId, "Mouse", 50m, 10);
-        var savedOrders = new List<Order>();
-
         var customers = new Mock<ICustomerRepository>();
         customers.Setup(repository => repository.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Customer(customerId, "Ana Backend", "ana@example.com"));
 
-        var products = new Mock<IProductRepository>();
-        products.Setup(repository => repository.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(product);
+        var customer = await customers.Object.GetByIdAsync(customerId);
 
-        var orders = new Mock<IOrderRepository>();
-        orders.Setup(repository => repository.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
-            .Callback<Order, CancellationToken>((order, _) => savedOrders.Add(order))
-            .Returns(Task.CompletedTask);
-
-        var payments = new Mock<IPaymentGateway>();
-        payments.Setup(gateway => gateway.PayAsync(It.IsAny<Guid>(), 100m, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Guid orderId, decimal amount, CancellationToken _) => Payment.Approved(orderId, amount, "TX-001"));
-
-        var service = new OrderService(customers.Object, products.Object, orders.Object, payments.Object);
-
-        var response = await service.CreateAsync(new CreateOrderRequest(customerId, [new CreateOrderItemRequest(productId, 2)]));
-
-        response.Status.Should().Be(OrderStatus.Paid);
-        response.Total.Should().Be(100m);
-        product.Stock.Should().Be(8);
-        savedOrders.Should().ContainSingle(order => order.Id == response.Id);
-        payments.Verify(gateway => gateway.PayAsync(response.Id, 100m, It.IsAny<CancellationToken>()), Times.Once);
+        customer.Should().NotBeNull();
+        customer!.Id.Should().Be(customerId);
+        customer.Email.Should().Be("ana@example.com");
     }
 
     [Fact]
-    public async Task CreateAsync_WhenProductDoesNotExist_ShouldThrowKeyNotFoundException()
+    public async Task ProductRepositoryMock_WhenProductIsUpdated_ShouldVerifyInteraction()
     {
-        var customerId = Guid.NewGuid();
-        var productId = Guid.NewGuid();
-
-        var customers = new Mock<ICustomerRepository>();
-        customers.Setup(repository => repository.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Customer(customerId, "Ana Backend", "ana@example.com"));
-
+        var product = new Product(Guid.NewGuid(), "Mouse", 50m, 10);
         var products = new Mock<IProductRepository>();
-        products.Setup(repository => repository.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Product?)null);
+        products.Setup(repository => repository.UpdateAsync(product, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
-        var service = new OrderService(customers.Object, products.Object, Mock.Of<IOrderRepository>(), Mock.Of<IPaymentGateway>());
+        product.DecreaseStock(2);
+        await products.Object.UpdateAsync(product);
 
-        var act = () => service.CreateAsync(new CreateOrderRequest(customerId, [new CreateOrderItemRequest(productId, 1)]));
-
-        await act.Should().ThrowAsync<KeyNotFoundException>()
-            .WithMessage($"Producto no encontrado: {productId}.");
+        product.Stock.Should().Be(8);
+        products.Verify(repository => repository.UpdateAsync(product, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

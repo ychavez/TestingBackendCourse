@@ -21,3 +21,22 @@ Lectura recomendada para clase:
 - Priorizar reglas de negocio y flujos criticos.
 - Revisar ramas no cubiertas, no solo lineas.
 - Combinar cobertura con pruebas legibles y mantenibles.
+
+## Gate de cobertura en CI
+
+El workflow de GitHub Actions ejecuta un gate especifico para pruebas unitarias:
+
+```bash
+dotnet test tests/01-UnitTests/Course.UnitTests/Course.UnitTests.csproj \
+  --configuration Release \
+  --no-build \
+  /p:CollectCoverage=true \
+  /p:CoverletOutputFormat=cobertura \
+  /p:Threshold=80 \
+  /p:ThresholdType=line \
+  /p:ThresholdStat=total
+```
+
+Si la cobertura total de lineas baja de 80%, el pipeline falla.
+
+Las pruebas Playwright se ejecutan despues de instalar Chromium y no forman parte del gate unitario. El objetivo del gate es vigilar la cobertura de reglas de negocio, no forzar cobertura de la UI.

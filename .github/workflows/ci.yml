@@ -29,8 +29,32 @@ jobs:
       - name: Build
         run: dotnet build TestingBackendCourse.sln --configuration Release --no-restore
 
+      - name: Unit test coverage gate
+        run: >
+          dotnet test tests/01-UnitTests/Course.UnitTests/Course.UnitTests.csproj
+          --configuration Release
+          --no-build
+          /p:CollectCoverage=true
+          /p:CoverletOutputFormat=cobertura
+          /p:CoverletOutput=../../../TestResults/unit-tests/
+          /p:Threshold=80
+          /p:ThresholdType=line
+          /p:ThresholdStat=total
+
       - name: Test with coverage
-        run: dotnet test TestingBackendCourse.sln --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory TestResults
+        run: >
+          dotnet test TestingBackendCourse.sln
+          --configuration Release
+          --no-build
+          --collect:"XPlat Code Coverage"
+          --results-directory TestResults
+          --filter "FullyQualifiedName!~Course.PlaywrightTests"
+
+      - name: Install Playwright Chromium
+        run: pwsh tests/08-FrontendTests/Course.PlaywrightTests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Frontend browser tests
+        run: dotnet test tests/08-FrontendTests/Course.PlaywrightTests/Course.PlaywrightTests.csproj --configuration Release --no-build
 
       - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
