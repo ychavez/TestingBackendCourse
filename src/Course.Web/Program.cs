@@ -3,13 +3,6 @@ using Course.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
-if (builder.Environment.IsEnvironment("Testing"))
-{
-    builder.Logging.ClearProviders();
-    builder.Logging.AddConsole();
-    builder.WebHost.UseStaticWebAssets();
-}
-
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
@@ -31,11 +24,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-if (!app.Environment.IsEnvironment("Testing"))
-{
-    app.UseHttpsRedirection();
-}
-
+app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
 
