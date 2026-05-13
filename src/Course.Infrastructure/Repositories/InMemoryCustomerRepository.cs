@@ -14,6 +14,7 @@ public sealed class InMemoryCustomerRepository : ICustomerRepository
 
     public Task<Customer?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
+       
         _store.Customers.TryGetValue(id, out var customer);
         return Task.FromResult(customer);
     }
