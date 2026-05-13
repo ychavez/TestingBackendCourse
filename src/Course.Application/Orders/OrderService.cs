@@ -35,7 +35,7 @@ public sealed class OrderService : IOrderService
         {
             throw new KeyNotFoundException("Cliente no encontrado.");
         }
-
+                                     ///xx1
         var order = new Order(Guid.NewGuid(), customer.Id, DateTimeOffset.UtcNow);
 
         foreach (var item in request.Items)
@@ -53,7 +53,11 @@ public sealed class OrderService : IOrderService
         var payment = await _payments.PayAsync(order.Id, order.CalculateTotal(), cancellationToken);
         order.RegisterPayment(payment);
 
-        await _orders.AddAsync(order, cancellationToken);
+
+        
+     await _orders.AddAsync(order, cancellationToken);
+
+     
 
         return OrderResponse.FromOrder(order);
     }

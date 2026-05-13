@@ -30,6 +30,7 @@ namespace Course.UnitTest
             //Act
             var customer = new Customer(id, "Juan Perez", "JuanPerez@gmail.com");
 
+            //Assert
             Assert.Equal(id, customer.Id);
             Assert.Equal("Juan Perez", customer.FullName);
             Assert.Equal("JuanPerez@gmail.com", customer.Email);
