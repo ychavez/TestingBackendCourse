@@ -5,7 +5,7 @@ namespace Course.Domain.Entities;
 
 public sealed class Payment
 {
-    private Payment(Guid id, Guid orderId, decimal amount, PaymentStatus status, string? transactionId)
+    public Payment(Guid id, Guid orderId, decimal amount, PaymentStatus status, string? transactionId)
     {
         if (id == Guid.Empty)
         {

@@ -16,10 +16,10 @@ public sealed class Customer
             throw new DomainException("El cliente requiere un nombre.");
         }
 
-        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@', StringComparison.Ordinal))
-        {
-            throw new DomainException("El cliente requiere un correo valido.");
-        }
+        //if (string.IsNullOrWhiteSpace(email) || !email.Contains('@', StringComparison.Ordinal))
+        //{
+        //    throw new DomainException("El cliente requiere un correo valido.");
+        //}
 
         Id = id;
         FullName = fullName;
