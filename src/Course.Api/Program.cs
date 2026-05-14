@@ -2,12 +2,6 @@ using Course.Infrastructure.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-if (builder.Environment.IsEnvironment("Testing"))
-{
-    builder.Logging.ClearProviders();
-    builder.Logging.AddConsole();
-}
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -22,11 +16,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-if (!app.Environment.IsEnvironment("Testing"))
-{
-    app.UseHttpsRedirection();
-}
-
+app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapHealthChecks("/health");
