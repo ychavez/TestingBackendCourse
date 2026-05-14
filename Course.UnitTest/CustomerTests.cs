@@ -7,18 +7,26 @@ namespace Course.UnitTest
     public class CustomerTests
     {
 
-        [Fact]
-        public void Consturctor_WhenEmailIsInvalid_ShouldThrowDomainException() 
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("juan perez")]
+        [InlineData("juan.perez")]
+        [InlineData("juan.perez.gmail")]
+        [InlineData("        ")]
+        public void Consturctor_WhenEmailIsInvalid_ShouldThrowDomainException(string email) 
         {
 
             // Arrange Act
-            var act = () => new Customer(Guid.NewGuid(), "Juan perez", "JuanPerez");
+            var act = () => new Customer(Guid.NewGuid(), "Juan perez", email);
 
 
             //Assert
             act.Should().Throw<DomainException>()
                 .WithMessage("El cliente requiere un correo valido.");       
         }
+
+
 
 
         [Fact]
