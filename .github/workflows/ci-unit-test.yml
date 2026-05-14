@@ -1,0 +1,39 @@
+name: CI - pruebas unitarias
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  test:
+    name: compilar y correr pruebas unitarias
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restaurar dependencias
+        run: dotnet restore TestingBackendCourse.sln
+
+      - name: Compilar solucion
+        run: dotnet build TestingBackendCourse.sln --configuration Release --no-restore
+
+      - name: Ejecutar las pruebas
+        run: dotnet test TestingBackendCourse.sln --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults
+
+      - name: subir resultados
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ./TestResults/**/*.trx
