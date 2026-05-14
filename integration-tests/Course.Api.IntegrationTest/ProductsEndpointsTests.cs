@@ -6,15 +6,20 @@ using FluentAssertions;
 
 namespace Course.Api.IntegrationTest;
 
+[Collection(CourseApiCollection.Name)]
 public class ProductsEndpointsTests
 {
+    private readonly HttpClient _client;
+
+    public ProductsEndpointsTests(CourseApiFactory factory)
+    {
+        _client = factory.CreateClient();
+    }
+
     [Fact]
     public async Task GetProducts_ShouldReturnSeededProducts()
     {
-        using var factory = new CourseApiFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/products");
+        var response = await _client.GetAsync("/api/products");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var products = await response.Content.ReadFromJsonAsync<List<ProductResponse>>();

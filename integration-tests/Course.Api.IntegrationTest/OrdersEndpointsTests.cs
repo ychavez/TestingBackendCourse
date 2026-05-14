@@ -7,19 +7,24 @@ using FluentAssertions;
 
 namespace Course.Api.IntegrationTest;
 
+[Collection(CourseApiCollection.Name)]
 public class OrdersEndpointsTests
 {
+    private readonly HttpClient _client;
+
+    public OrdersEndpointsTests(CourseApiFactory factory)
+    {
+        _client = factory.CreateClient();
+    }
+
     [Fact]
     public async Task CreateOrder_WhenValid_ShouldReturnCreatedAndPaid()
     {
-        using var factory = new CourseApiFactory();
-        using var client = factory.CreateClient();
-
         var request = new CreateOrderRequest(
             DemoData.CustomerId,
             new List<CreateOrderItemRequest> { new(DemoData.MouseId, 2) });
 
-        var response = await client.PostAsJsonAsync("/api/orders", request);
+        var response = await _client.PostAsJsonAsync("/api/orders", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var order = await response.Content.ReadFromJsonAsync<OrderResponse>();
@@ -34,14 +39,11 @@ public class OrdersEndpointsTests
     [Fact]
     public async Task CreateOrder_WhenCustomerDoesNotExist_ShouldReturnNotFound()
     {
-        using var factory = new CourseApiFactory();
-        using var client = factory.CreateClient();
-
         var request = new CreateOrderRequest(
             Guid.NewGuid(),
             new List<CreateOrderItemRequest> { new(DemoData.MouseId, 1) });
 
-        var response = await client.PostAsJsonAsync("/api/orders", request);
+        var response = await _client.PostAsJsonAsync("/api/orders", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -49,14 +51,11 @@ public class OrdersEndpointsTests
     [Fact]
     public async Task CreateOrder_WhenProductDoesNotExist_ShouldReturnNotFound()
     {
-        using var factory = new CourseApiFactory();
-        using var client = factory.CreateClient();
-
         var request = new CreateOrderRequest(
             DemoData.CustomerId,
             new List<CreateOrderItemRequest> { new(Guid.NewGuid(), 1) });
 
-        var response = await client.PostAsJsonAsync("/api/orders", request);
+        var response = await _client.PostAsJsonAsync("/api/orders", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -64,14 +63,11 @@ public class OrdersEndpointsTests
     [Fact]
     public async Task CreateOrder_WhenItemsEmpty_ShouldReturnBadRequest()
     {
-        using var factory = new CourseApiFactory();
-        using var client = factory.CreateClient();
-
         var request = new CreateOrderRequest(
             DemoData.CustomerId,
             new List<CreateOrderItemRequest>());
 
-        var response = await client.PostAsJsonAsync("/api/orders", request);
+        var response = await _client.PostAsJsonAsync("/api/orders", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -79,16 +75,13 @@ public class OrdersEndpointsTests
     [Fact]
     public async Task GetOrderById_WhenExists_ShouldReturnOrder()
     {
-        using var factory = new CourseApiFactory();
-        using var client = factory.CreateClient();
-
         var createRequest = new CreateOrderRequest(
             DemoData.CustomerId,
             new List<CreateOrderItemRequest> { new(DemoData.MouseId, 1) });
-        var createResponse = await client.PostAsJsonAsync("/api/orders", createRequest);
+        var createResponse = await _client.PostAsJsonAsync("/api/orders", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<OrderResponse>();
 
-        var getResponse = await client.GetAsync($"/api/orders/{created!.Id}");
+        var getResponse = await _client.GetAsync($"/api/orders/{created!.Id}");
 
         getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var fetched = await getResponse.Content.ReadFromJsonAsync<OrderResponse>();
@@ -98,10 +91,7 @@ public class OrdersEndpointsTests
     [Fact]
     public async Task GetOrderById_WhenMissing_ShouldReturnNotFound()
     {
-        using var factory = new CourseApiFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync($"/api/orders/{Guid.NewGuid()}");
+        var response = await _client.GetAsync($"/api/orders/{Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -109,16 +99,13 @@ public class OrdersEndpointsTests
     [Fact]
     public async Task CancelOrder_WhenPaid_ShouldReturnBadRequest()
     {
-        using var factory = new CourseApiFactory();
-        using var client = factory.CreateClient();
-
         var createRequest = new CreateOrderRequest(
             DemoData.CustomerId,
             new List<CreateOrderItemRequest> { new(DemoData.MouseId, 1) });
-        var createResponse = await client.PostAsJsonAsync("/api/orders", createRequest);
+        var createResponse = await _client.PostAsJsonAsync("/api/orders", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<OrderResponse>();
 
-        var cancelResponse = await client.PostAsync($"/api/orders/{created!.Id}/cancel", content: null);
+        var cancelResponse = await _client.PostAsync($"/api/orders/{created!.Id}/cancel", content: null);
 
         cancelResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -126,10 +113,7 @@ public class OrdersEndpointsTests
     [Fact]
     public async Task CancelOrder_WhenMissing_ShouldReturnNotFound()
     {
-        using var factory = new CourseApiFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.PostAsync($"/api/orders/{Guid.NewGuid()}/cancel", content: null);
+        var response = await _client.PostAsync($"/api/orders/{Guid.NewGuid()}/cancel", content: null);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -137,10 +121,7 @@ public class OrdersEndpointsTests
     [Fact]
     public async Task HealthCheck_ShouldReturnHealthy()
     {
-        using var factory = new CourseApiFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/health");
+        var response = await _client.GetAsync("/health");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
