@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using Course.Application.Orders;
-using Course.Infrastructure.Repositories;
 using FluentAssertions;
 
 namespace Course.Api.IntegrationTest;
@@ -9,11 +8,15 @@ namespace Course.Api.IntegrationTest;
 [Collection(CourseApiCollection.Name)]
 public class ProductsEndpointsTests
 {
+    private readonly CourseApiFactory _factory;
     private readonly HttpClient _client;
+    private readonly CourseApiTestDataFixture _testData;
 
     public ProductsEndpointsTests(CourseApiFactory factory)
     {
-        _client = factory.CreateClient();
+        _factory = factory;
+        _client = factory.CreateAuthenticatedClient();
+        _testData = factory.TestData;
     }
 
     [Fact]
@@ -25,8 +28,18 @@ public class ProductsEndpointsTests
         var products = await response.Content.ReadFromJsonAsync<List<ProductResponse>>();
         products.Should().NotBeNull();
         products!.Should().HaveCount(3);
-        products.Should().Contain(p => p.Id == DemoData.KeyboardId);
-        products.Should().Contain(p => p.Id == DemoData.MouseId);
-        products.Should().Contain(p => p.Id == DemoData.LaptopId);
+        products.Should().Contain(p => p.Id == _testData.KeyboardId);
+        products.Should().Contain(p => p.Id == _testData.MouseId);
+        products.Should().Contain(p => p.Id == _testData.MonitorId);
+    }
+
+    [Fact]
+    public async Task GetProducts_WithoutApiKey_ShouldReturnUnauthorized()
+    {
+        var anonymousClient = _factory.CreateClient();
+
+        var response = await anonymousClient.GetAsync("/api/products");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }

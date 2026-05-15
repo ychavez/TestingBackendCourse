@@ -1,0 +1,152 @@
+
+name: CI - coverage
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  CONFIGURATION: Release
+  MIN_UNIT_COVERAGE: '50'
+  MIN_INTEGRATION_COVERAGE: '70'
+
+jobs:
+  coverage:
+    name: verificar coverage unitario e integracion
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restaurar dependencias
+        run: dotnet restore TestingBackendCourse.sln
+
+      - name: Compilar solucion
+        run: dotnet build TestingBackendCourse.sln --configuration ${{ env.CONFIGURATION }} --no-restore
+
+      - name: Limpiar resultados previos
+        shell: pwsh
+        run: Remove-Item -LiteralPath ./TestResults/Coverage -Recurse -Force -ErrorAction SilentlyContinue
+
+      - name: Ejecutar pruebas unitarias con coverage
+        run: >
+          dotnet test Course.UnitTest/Course.UnitTest.csproj
+          --configuration ${{ env.CONFIGURATION }}
+          --no-build
+          --collect:"XPlat Code Coverage"
+          --results-directory ./TestResults/Coverage/Unit
+          --logger "trx;LogFileName=unit-tests.trx"
+          --
+          DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+
+      - name: Ejecutar pruebas de integracion con coverage
+        run: >
+          dotnet test integration-tests/Course.Api.IntegrationTest/Course.Api.IntegrationTest.csproj
+          --configuration ${{ env.CONFIGURATION }}
+          --no-build
+          --collect:"XPlat Code Coverage"
+          --results-directory ./TestResults/Coverage/Integration
+          --logger "trx;LogFileName=integration-tests.trx"
+          --
+          DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+
+      - name: Verificar porcentajes de coverage
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $culture = [System.Globalization.CultureInfo]::InvariantCulture
+
+          function Get-CoverageResult {
+              param(
+                  [string] $Name,
+                  [string] $ResultsDirectory
+              )
+
+              $coverageFiles = Get-ChildItem -LiteralPath $ResultsDirectory -Recurse -Filter 'coverage.cobertura.xml'
+              if (-not $coverageFiles) {
+                  throw "No se encontro coverage.cobertura.xml para $Name en $ResultsDirectory."
+              }
+
+              $uniqueFiles = @{}
+              foreach ($file in $coverageFiles) {
+                  $hash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
+                  if (-not $uniqueFiles.ContainsKey($hash)) {
+                      $uniqueFiles[$hash] = $file
+                  }
+              }
+
+              $coveredLines = 0
+              $validLines = 0
+              foreach ($file in $uniqueFiles.Values) {
+                  [xml] $coverage = Get-Content -LiteralPath $file.FullName
+                  $coveredLines += [int] $coverage.coverage.'lines-covered'
+                  $validLines += [int] $coverage.coverage.'lines-valid'
+              }
+
+              if ($validLines -eq 0) {
+                  throw "El reporte de coverage para $Name no tiene lineas validas."
+              }
+
+              $percent = [math]::Round(($coveredLines / $validLines) * 100, 2)
+              [pscustomobject]@{
+                  Name = $Name
+                  Percent = $percent
+                  CoveredLines = $coveredLines
+                  ValidLines = $validLines
+                  ReportCount = $uniqueFiles.Count
+              }
+          }
+
+          $unit = Get-CoverageResult -Name 'Unitarias' -ResultsDirectory './TestResults/Coverage/Unit'
+          $integration = Get-CoverageResult -Name 'Integracion' -ResultsDirectory './TestResults/Coverage/Integration'
+
+          $minUnitCoverage = [double]::Parse($env:MIN_UNIT_COVERAGE, $culture)
+          $minIntegrationCoverage = [double]::Parse($env:MIN_INTEGRATION_COVERAGE, $culture)
+
+          $summary = @(
+              '### Coverage',
+              '',
+              '| Suite | Coverage | Lineas cubiertas | Reportes | Umbral |',
+              '| --- | ---: | ---: | ---: | ---: |',
+              "| $($unit.Name) | $($unit.Percent.ToString('0.00', $culture))% | $($unit.CoveredLines)/$($unit.ValidLines) | $($unit.ReportCount) | $($minUnitCoverage.ToString('0.00', $culture))% |",
+              "| $($integration.Name) | $($integration.Percent.ToString('0.00', $culture))% | $($integration.CoveredLines)/$($integration.ValidLines) | $($integration.ReportCount) | $($minIntegrationCoverage.ToString('0.00', $culture))% |"
+          )
+
+          $summary | Add-Content -Path $env:GITHUB_STEP_SUMMARY
+          $summary | ForEach-Object { Write-Host $_ }
+
+          $failures = @()
+          if ($unit.Percent -lt $minUnitCoverage) {
+              $failures += "Unitarias: $($unit.Percent)% menor que $minUnitCoverage%."
+          }
+
+          if ($integration.Percent -lt $minIntegrationCoverage) {
+              $failures += "Integracion: $($integration.Percent)% menor que $minIntegrationCoverage%."
+          }
+
+          if ($failures.Count -gt 0) {
+              throw "Coverage insuficiente. $($failures -join ' ')"
+          }
+
+      - name: Subir resultados de coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-results
+          path: |
+            ./TestResults/Coverage/**/*.trx
+            ./TestResults/Coverage/**/coverage.cobertura.xml
