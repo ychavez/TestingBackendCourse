@@ -46,7 +46,7 @@ public sealed class OrderService : IOrderService
                 throw new KeyNotFoundException($"Producto no encontrado: {item.ProductId}.");
             }
 
-          //  order.AddItem(product, item.Quantity);
+            order.AddItem(product, item.Quantity);
             await _products.UpdateAsync(product, cancellationToken);
         }
 

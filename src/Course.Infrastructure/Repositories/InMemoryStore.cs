@@ -5,11 +5,16 @@ namespace Course.Infrastructure.Repositories;
 
 public sealed class InMemoryStore
 {
-    public InMemoryStore()
+    public InMemoryStore() : this(DemoData.Customers(), DemoData.Products()) { }
+    
+
+
+    public InMemoryStore(IEnumerable<Customer> customers, IEnumerable<Product> products)
     {
-        Customers = new ConcurrentDictionary<Guid, Customer>(DemoData.Customers().ToDictionary(customer => customer.Id));
-        Products = new ConcurrentDictionary<Guid, Product>(DemoData.Products().ToDictionary(product => product.Id));
+        Customers = new ConcurrentDictionary<Guid, Customer>(customers.ToDictionary(customer => customer.Id));
+        Products = new ConcurrentDictionary<Guid, Product>(products.ToDictionary(product => product.Id));
         Orders = new ConcurrentDictionary<Guid, Order>();
+        
     }
 
     public ConcurrentDictionary<Guid, Customer> Customers { get; }

@@ -1,10 +1,7 @@
 ﻿using Course.Application.Orders;
 using Course.Infrastructure.Repositories;
 using FluentAssertions;
-using System;
-using System.Collections.Generic;
 using System.Net.Http.Json;
-using System.Text;
 
 namespace Course.Api.IntegrationTest
 {
@@ -13,18 +10,20 @@ namespace Course.Api.IntegrationTest
     {
 
         private readonly HttpClient _client;
+        private readonly CourseApiTestDataFixture _fixture;
 
         public OrdersEndpointsTests(CourseApiFactory factory)
         {
             _client = factory.CreateClient();
+            _fixture = factory.TestData;
         }
 
         [Fact]
         public async Task CreateOrder_WhenValid_ShouldReturnCreateAndApaid() 
         {
             //ARRANGE
-            var request = new CreateOrderRequest(DemoData.CustomerId,
-                new List<CreateOrderItemRequest> { new(DemoData.MouseId, 2) });
+            var request = new CreateOrderRequest(_fixture.CustomerId,
+                new List<CreateOrderItemRequest> { new(_fixture.MouseId, 2) });
 
 
             //ACT
@@ -36,8 +35,8 @@ namespace Course.Api.IntegrationTest
             var order = await response.Content.ReadFromJsonAsync<OrderResponse>();
 
             order.Should().NotBeNull();
-            order.CustomerId.Should().Be(DemoData.CustomerId);
-            order.Total.Should().Be(90m);
+            order.CustomerId.Should().Be(_fixture.CustomerId);
+            order.Total.Should().Be(50m);
             order.Payment.Should().NotBeNull();
             order.Payment.Status.Should().Be(Domain.Enums.PaymentStatus.Approved);
         }
