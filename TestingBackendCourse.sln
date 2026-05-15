@@ -23,6 +23,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "02-IntegrationTest", "02-In
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Course.Api.IntegrationTest", "Course.Api.IntegrationTest\Course.Api.IntegrationTest.csproj", "{92EE9FC7-C72B-4CB0-BC04-D5D7A652B4C9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Course.Web.E2ETest", "Course.Web.E2ETest\Course.Web.E2ETest.csproj", "{BA72F7EE-5283-4266-8A52-0108C9F2A628}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -117,6 +119,18 @@ Global
 		{92EE9FC7-C72B-4CB0-BC04-D5D7A652B4C9}.Release|x64.Build.0 = Release|Any CPU
 		{92EE9FC7-C72B-4CB0-BC04-D5D7A652B4C9}.Release|x86.ActiveCfg = Release|Any CPU
 		{92EE9FC7-C72B-4CB0-BC04-D5D7A652B4C9}.Release|x86.Build.0 = Release|Any CPU
+		{BA72F7EE-5283-4266-8A52-0108C9F2A628}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA72F7EE-5283-4266-8A52-0108C9F2A628}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA72F7EE-5283-4266-8A52-0108C9F2A628}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BA72F7EE-5283-4266-8A52-0108C9F2A628}.Debug|x64.Build.0 = Debug|Any CPU
+		{BA72F7EE-5283-4266-8A52-0108C9F2A628}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BA72F7EE-5283-4266-8A52-0108C9F2A628}.Debug|x86.Build.0 = Debug|Any CPU
+		{BA72F7EE-5283-4266-8A52-0108C9F2A628}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA72F7EE-5283-4266-8A52-0108C9F2A628}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA72F7EE-5283-4266-8A52-0108C9F2A628}.Release|x64.ActiveCfg = Release|Any CPU
+		{BA72F7EE-5283-4266-8A52-0108C9F2A628}.Release|x64.Build.0 = Release|Any CPU
+		{BA72F7EE-5283-4266-8A52-0108C9F2A628}.Release|x86.ActiveCfg = Release|Any CPU
+		{BA72F7EE-5283-4266-8A52-0108C9F2A628}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
