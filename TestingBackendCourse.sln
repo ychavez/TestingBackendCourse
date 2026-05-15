@@ -27,6 +27,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "03-E2E-test", "03-E2E-test"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Course.Web.E2ETest", "Course.Web.E2ETest\Course.Web.E2ETest.csproj", "{F5C7F4E0-D1CB-4882-9207-5E612AD147BD}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NewFolder1", "NewFolder1", "{754C45F6-B784-43C6-A991-0FFAB203C0C9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
