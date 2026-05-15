@@ -9,12 +9,12 @@ public sealed class FakePaymentGateway : IPaymentGateway
 
     public Task<Payment> PayAsync(Guid orderId, decimal amount, CancellationToken cancellationToken = default)
     {
-        //var payment = Payment.Rejected(orderId, amount);
-        //return Task.FromResult(payment);
+        var payment = Payment.Rejected(orderId, amount);
+        return Task.FromResult(payment);
 
-        var payment = amount <= ApprovalLimit
-            ? Payment.Approved(orderId, amount, $"SIM-{Guid.NewGuid():N}")
-            : Payment.Rejected(orderId, amount);
+        //var payment = amount <= ApprovalLimit
+        //    ? Payment.Approved(orderId, amount, $"SIM-{Guid.NewGuid():N}")
+        //    : Payment.Rejected(orderId, amount);
 
         return Task.FromResult(payment);
     }
