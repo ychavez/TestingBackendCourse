@@ -23,6 +23,7 @@ public sealed class OrdersController : ControllerBase
     {
         try
         {
+
             var order = await _orders.CreateAsync(request, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
         }
